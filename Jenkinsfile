@@ -36,12 +36,12 @@ pipeline {
             }
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'DeploymentSSHKey', keyFileVariable: 'keyfile')]) {
-                    sh 'ssh -i $keyfile -o StrictHostKeyChecking=no kali@192.168.36.130 "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"'
-                    sh 'ssh -i $keyfile -o StrictHostKeyChecking=no kali@192.168.36.130 docker pull sc4redy/nodejsgoof:01'
-                    sh 'ssh -i $keyfile -o StrictHostKeyChecking=no kali@192.168.36.130 docker rm --force mongodb'
-                    sh 'ssh -i $keyfile -o StrictHostKeyChecking=no kali@192.168.36.130 docker run --detach --name mongodb -p 27017:27017 mongo:3'
-                    sh 'ssh -i $keyfile -o StrictHostKeyChecking=no kali@192.168.36.130 docker rm --force nodejsgoof'
-                    sh 'ssh -i $keyfile -o StrictHostKeyChecking=no kali@192.168.36.130 docker run -it --detach --name nodejsgoof --network host sc4redy/nodejsgoof:01'
+                    sh 'ssh -i ${keyfile} -o StrictHostKeyChecking=no ubuntu@192.168.36.128 "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"'
+                    sh 'ssh -i ${keyfile} -o StrictHostKeyChecking=no ubuntu@192.168.36.128 docker pull sc4redy/nodejsgoof:01'
+                    sh 'ssh -i ${keyfile} -o StrictHostKeyChecking=no ubuntu@192.168.36.128 docker rm --force mongodb'
+                    sh 'ssh -i ${keyfile} -o StrictHostKeyChecking=no ubuntu@192.168.36.128 docker run --detach --name mongodb -p 27017:27017 mongo:3'
+                    sh 'ssh -i ${keyfile} -o StrictHostKeyChecking=no ubuntu@192.168.36.128 docker rm --force nodejsgoof'
+                    sh 'ssh -i ${keyfile} -o StrictHostKeyChecking=no ubuntu@192.168.36.128 docker run -it --detach --name nodejsgoof --network host sc4redy/nodejsgoof:01'
                 }
             }
         }
