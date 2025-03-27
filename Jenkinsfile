@@ -2,9 +2,10 @@ pipeline {
     agent none
     environment {
         DOCKERHUB_CREDENTIALS = credentials('DockerLogin')
+        SNYK_CREDENTIALS = credentials('SnykToken')
     }
     stages {
-        stage('Secret scanning using trufllehog') {
+        stage('Secret scanning using trufflehog') {
             agent {
                 docker {
                     image 'trufflesecurity/trufflehog:latest'
@@ -14,9 +15,9 @@ pipeline {
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                     sh 'trufflehog filesystem . --exclude-paths trufflehog-excluded-paths.txt --fail --json --no-update > trufflehog-scan-result.json'
-            }
-            sh 'cat trufflehog-scan-result.json'
-            archiveArtifacts artifacts: 'trufflehog-scan-result.json'
+                }
+                sh 'cat trufflehog-scan-result.json'
+                archiveArtifacts artifacts: 'trufflehog-scan-result.json'
             }
         }
         stage('Build') {
@@ -27,6 +28,36 @@ pipeline {
             }
             steps {
                 sh 'npm install'
+            }
+        }
+        stage('SCA Snyk Test') {
+            agent {
+                docker {
+                    image 'snyk/snyk:node'
+                    args '-u root --network host --env SNYK_TOKEN=$SNYK_CREDENIALS_PSW --entrypoint='
+                }
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    sh 'snyk test --json > snyk-scan-report.json'
+                }
+                sh 'cat snyk-scan-report.json'
+                archiveArtifacts artifacts: 'snyk-scan-report.json'
+            }
+        }
+        stage('SCA Retire Js') {
+            agent {
+                docker {
+                    image 'node:lts-buster-slim'
+                }
+            }
+            steps {
+                sh 'npm install retire'
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    sh './node_modules/retire/lib/cli.js --outputformat json --outputpath retire-scan-report.json'
+                }
+                sh 'cat retire-scan-report.json'
+                archiveArtifacts artifacts: 'retire-scan-report.json'
             }
         }
         stage('Build Docker Image and Push to Docker Registry') {
